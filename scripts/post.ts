@@ -102,24 +102,39 @@ async function main() {
     process.exit(0);
   }
 
-  const required = ["LINKEDIN_CLIENT_ID", "LINKEDIN_CLIENT_SECRET", "LINKEDIN_REFRESH_TOKEN", "LINKEDIN_USER_URN"];
-  for (const key of required) {
-    if (!process.env[key]) {
-      console.error(`Missing env var: ${key}`);
-      process.exit(1);
-    }
+  if (!process.env.LINKEDIN_USER_URN) {
+    console.error("Missing env var: LINKEDIN_USER_URN");
+    process.exit(1);
   }
 
-  console.log("⟳ Refreshing access token…");
-  const tokens = await refreshAccessToken({
-    clientId: process.env.LINKEDIN_CLIENT_ID!,
-    clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
-    refreshToken: process.env.LINKEDIN_REFRESH_TOKEN!,
-  });
+  // Try to refresh first if we have a refresh token; otherwise use the access
+  // token directly. LinkedIn Default Tier apps don't get refresh tokens, so the
+  // access token (valid ~60 days) is what we have to work with.
+  let accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
+  const hasRefresh =
+    process.env.LINKEDIN_REFRESH_TOKEN &&
+    process.env.LINKEDIN_CLIENT_ID &&
+    process.env.LINKEDIN_CLIENT_SECRET;
+
+  if (hasRefresh) {
+    console.log("⟳ Refreshing access token…");
+    const tokens = await refreshAccessToken({
+      clientId: process.env.LINKEDIN_CLIENT_ID!,
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET!,
+      refreshToken: process.env.LINKEDIN_REFRESH_TOKEN!,
+    });
+    accessToken = tokens.access_token;
+  }
+
+  if (!accessToken) {
+    console.error("Missing LINKEDIN_ACCESS_TOKEN (and no refresh token to mint one).");
+    console.error("Run `npm run get-token` to re-authorize.");
+    process.exit(1);
+  }
 
   console.log("→ Publishing to LinkedIn…");
   const result = await createPost({
-    accessToken: tokens.access_token,
+    accessToken,
     authorUrn: process.env.LINKEDIN_USER_URN!,
     commentary: post.body,
     visibility: post.data.visibility ?? "PUBLIC",
