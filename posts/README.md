@@ -8,6 +8,8 @@ One file per post: `YYYY-MM-DD.md`. The GitHub Action looks for `posts/{today-UT
 ---
 visibility: PUBLIC          # PUBLIC | CONNECTIONS (default: PUBLIC)
 status: ready               # ready | draft | sent (only "ready" publishes)
+image: ./assets/foo.png     # optional — relative to this file OR a https:// URL
+image_alt: "What's in it"   # required if image is set (LinkedIn rejects without alt)
 ---
 
 The first line is your hook. Make it strong.
@@ -22,6 +24,21 @@ Hashtags go at the bottom.
 
 #growth #ai #operators
 ```
+
+## Images
+
+Add an image by setting two frontmatter fields:
+
+- `image:` — either a relative path (from the post file) or a fully-qualified URL.
+- `image_alt:` — required. Short, descriptive. Read by screen readers and by LinkedIn's own algorithm.
+
+On run, the script:
+1. Loads the bytes (from disk or HTTP).
+2. Calls `POST /rest/images?action=initializeUpload` to mint an image URN.
+3. PUTs the bytes to the returned `uploadUrl`.
+4. Attaches the URN to the post via `content.media`.
+
+Supported formats: PNG, JPEG, GIF (no animation). Max file size: 10 MB.
 
 ## Status field
 

@@ -15,10 +15,10 @@
 //   --date YYYY-MM-DD  Override today's date (useful for testing)
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
-import { refreshAccessToken, createPost } from "../lib/linkedin.ts";
+import { refreshAccessToken, createPost, uploadImage } from "../lib/linkedin.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -53,9 +53,36 @@ function findPost(date: string) {
   const parsed = matter(raw);
   return {
     path,
-    data: parsed.data as { visibility?: "PUBLIC" | "CONNECTIONS"; status?: string },
+    data: parsed.data as {
+      visibility?: "PUBLIC" | "CONNECTIONS";
+      status?: string;
+      image?: string;
+      image_alt?: string;
+    },
     body: parsed.content.trim(),
   };
+}
+
+async function loadImageBytes(spec: string, postPath: string): Promise<{ bytes: Uint8Array; contentType: string }> {
+  if (spec.startsWith("http://") || spec.startsWith("https://")) {
+    const res = await fetch(spec);
+    if (!res.ok) throw new Error(`fetch image failed: ${res.status}`);
+    const contentType = res.headers.get("content-type") ?? "image/png";
+    const arrayBuffer = await res.arrayBuffer();
+    return { bytes: new Uint8Array(arrayBuffer), contentType };
+  }
+  // Local path: resolved relative to the post file's directory unless absolute.
+  const path = isAbsolute(spec) ? spec : resolve(dirname(postPath), spec);
+  if (!existsSync(path)) {
+    throw new Error(`image not found: ${path}`);
+  }
+  const bytes = new Uint8Array(readFileSync(path));
+  const contentType = path.toLowerCase().endsWith(".jpg") || path.toLowerCase().endsWith(".jpeg")
+    ? "image/jpeg"
+    : path.toLowerCase().endsWith(".gif")
+    ? "image/gif"
+    : "image/png";
+  return { bytes, contentType };
 }
 
 function listAvailable(): string[] {
@@ -93,11 +120,27 @@ async function main() {
   }
 
   console.log(`▸ Post for ${date} (${post.body.length} chars)`);
+  if (post.data.image) console.log(`▸ Attached image: ${post.data.image}`);
   console.log("───────────────────────────────────────────");
   console.log(post.body);
   console.log("───────────────────────────────────────────");
 
   if (dryRun) {
+    // Resolve the image so we catch path/URL issues at dry-run time,
+    // without actually uploading anything to LinkedIn.
+    if (post.data.image) {
+      if (!post.data.image_alt) {
+        console.error("✗ image is set but image_alt is missing — LinkedIn rejects posts without alt text.");
+        process.exit(1);
+      }
+      try {
+        const { bytes, contentType } = await loadImageBytes(post.data.image, post.path);
+        console.log(`✓ Image OK — ${(bytes.length / 1024).toFixed(1)} KB · ${contentType}`);
+      } catch (err) {
+        console.error(`✗ Image load failed: ${err instanceof Error ? err.message : err}`);
+        process.exit(1);
+      }
+    }
     console.log("✓ Dry run — not publishing.");
     process.exit(0);
   }
@@ -132,12 +175,32 @@ async function main() {
     process.exit(1);
   }
 
+  // Upload image first if the post references one.
+  let media: { imageUrn: string; altText: string } | undefined;
+  if (post.data.image) {
+    if (!post.data.image_alt) {
+      console.error("Posts with images must include an `image_alt` field (accessibility + LinkedIn requirement).");
+      process.exit(1);
+    }
+    console.log("↑ Uploading image to LinkedIn…");
+    const { bytes, contentType } = await loadImageBytes(post.data.image, post.path);
+    const uploaded = await uploadImage({
+      accessToken,
+      ownerUrn: process.env.LINKEDIN_USER_URN!,
+      imageBytes: bytes,
+      contentType,
+    });
+    media = { imageUrn: uploaded.urn, altText: post.data.image_alt };
+    console.log(`  image urn: ${uploaded.urn}`);
+  }
+
   console.log("→ Publishing to LinkedIn…");
   const result = await createPost({
     accessToken,
     authorUrn: process.env.LINKEDIN_USER_URN!,
     commentary: post.body,
     visibility: post.data.visibility ?? "PUBLIC",
+    media,
   });
 
   console.log(`✓ Published. Post ID: ${result.id}`);

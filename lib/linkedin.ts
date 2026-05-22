@@ -77,15 +77,75 @@ export async function fetchUserUrn(accessToken: string): Promise<string> {
   return `urn:li:person:${data.sub}`;
 }
 
+export interface UploadedImage {
+  urn: string; // urn:li:image:...
+}
+
+/**
+ * Image upload is a 2-step dance on LinkedIn's REST API:
+ *   1) initializeUpload  →  returns a one-time uploadUrl + the image URN
+ *   2) PUT the bytes to uploadUrl
+ * The URN is then attached to the post via content.media.
+ */
+export async function uploadImage(opts: {
+  accessToken: string;
+  ownerUrn: string;
+  imageBytes: Uint8Array;
+  contentType?: string;
+}): Promise<UploadedImage> {
+  // Step 1: initialize
+  const initRes = await fetch(`${REST_BASE}/images?action=initializeUpload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${opts.accessToken}`,
+      "X-Restli-Protocol-Version": "2.0.0",
+      "LinkedIn-Version": API_VERSION,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      initializeUploadRequest: { owner: opts.ownerUrn },
+    }),
+  });
+
+  if (!initRes.ok) {
+    throw new Error(`image initializeUpload failed: ${initRes.status} ${await initRes.text()}`);
+  }
+
+  const initData = (await initRes.json()) as {
+    value: { uploadUrl: string; image: string };
+  };
+  const { uploadUrl, image: imageUrn } = initData.value;
+
+  // Step 2: upload bytes
+  const uploadRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      Authorization: `Bearer ${opts.accessToken}`,
+      "Content-Type": opts.contentType ?? "image/png",
+    },
+    body: opts.imageBytes,
+  });
+
+  if (!uploadRes.ok) {
+    throw new Error(`image upload failed: ${uploadRes.status} ${await uploadRes.text()}`);
+  }
+
+  return { urn: imageUrn };
+}
+
 export interface CreatePostInput {
   accessToken: string;
   authorUrn: string;
   commentary: string;
   visibility?: "PUBLIC" | "CONNECTIONS";
+  media?: {
+    imageUrn: string;
+    altText: string;
+  };
 }
 
 export async function createPost(input: CreatePostInput): Promise<{ id: string }> {
-  const body = {
+  const body: Record<string, unknown> = {
     author: input.authorUrn,
     commentary: input.commentary,
     visibility: input.visibility ?? "PUBLIC",
@@ -97,6 +157,15 @@ export async function createPost(input: CreatePostInput): Promise<{ id: string }
     lifecycleState: "PUBLISHED",
     isReshareDisabledByAuthor: false,
   };
+
+  if (input.media) {
+    body.content = {
+      media: {
+        id: input.media.imageUrn,
+        altText: input.media.altText,
+      },
+    };
+  }
 
   const res = await fetch(`${REST_BASE}/posts`, {
     method: "POST",
