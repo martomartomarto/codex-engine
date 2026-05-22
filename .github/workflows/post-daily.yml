@@ -1,0 +1,49 @@
+name: Post to LinkedIn
+
+on:
+  schedule:
+    # 14:00 UTC daily = 11:00 AM Argentina (-03:00). Adjust if needed.
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Override post date (YYYY-MM-DD). Leave empty for today."
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run — print but don't post"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Publish today's post
+        env:
+          LINKEDIN_CLIENT_ID: ${{ secrets.LINKEDIN_CLIENT_ID }}
+          LINKEDIN_CLIENT_SECRET: ${{ secrets.LINKEDIN_CLIENT_SECRET }}
+          LINKEDIN_REFRESH_TOKEN: ${{ secrets.LINKEDIN_REFRESH_TOKEN }}
+          LINKEDIN_USER_URN: ${{ secrets.LINKEDIN_USER_URN }}
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ github.event.inputs.date }}"
+          fi
+          DRY_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_FLAG="--dry-run"
+          fi
+          npx tsx scripts/post.ts $DATE_FLAG $DRY_FLAG

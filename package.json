@@ -1,0 +1,23 @@
+{
+  "name": "growth-engine",
+  "version": "0.1.0",
+  "private": false,
+  "description": "The system that posts to LinkedIn for me. Part of Codex (codex-os.vercel.app).",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "get-token": "tsx scripts/get-token.ts",
+    "post": "tsx scripts/post.ts",
+    "post:dry": "tsx scripts/post.ts --dry-run"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
