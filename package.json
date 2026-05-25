@@ -1,5 +1,5 @@
 {
-  "name": "growth-engine",
+  "name": "codex-engine",
   "version": "0.2.0",
   "private": false,
   "description": "The system that posts to LinkedIn for me. Part of Codex (codex-os.vercel.app).",

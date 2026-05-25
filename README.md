@@ -1,4 +1,4 @@
-# growth-engine
+# codex-engine
 
 The system that posts to LinkedIn for me.
 
@@ -57,7 +57,7 @@ The complete method is documented at [codex-os.vercel.app](https://codex-os.verc
 ## Files
 
 ```
-growth-engine/
+codex-engine/
 ├── posts/                    # your queue (markdown files, one per date)
 ├── scripts/
 │   ├── get-token.ts          # one-time OAuth helper

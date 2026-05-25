@@ -61,7 +61,7 @@ async function main() {
       scope: SCOPES.join(" "),
     }).toString();
 
-  console.log("\n  growth-engine · LinkedIn OAuth helper");
+  console.log("\n  codex-engine · LinkedIn OAuth helper");
   console.log("  ──────────────────────────────────────");
   console.log("  Opening browser to authorize…");
   console.log(`  If it doesn't open, visit:\n  ${authUrl}\n`);
