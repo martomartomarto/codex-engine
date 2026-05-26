@@ -1,0 +1,37 @@
+{
+  "$schema_note": "Edit this file to control what the intel sweep tracks. Each target has: url (required), label (human-readable), tag (groups in output: 'competitor' | 'research' | anything), note (optional context, written into the report). Move items to _pending_verify when you don't have a confirmed URL yet — they're ignored by the script.",
+  "targets": [
+    {
+      "url": "https://www.anthropic.com/news",
+      "label": "Anthropic News",
+      "tag": "research"
+    },
+    {
+      "url": "https://openai.com/news/",
+      "label": "OpenAI News",
+      "tag": "research"
+    },
+    {
+      "url": "https://vercel.com/changelog",
+      "label": "Vercel Changelog",
+      "tag": "research"
+    },
+    {
+      "url": "https://a16z.com/ai/",
+      "label": "a16z — AI",
+      "tag": "research"
+    }
+  ],
+  "_pending_verify": [
+    {
+      "label": "Beacon Talent",
+      "tag": "competitor",
+      "note": "Recruiting Founding Growth roles for AI startups. beacontalent.com is a parked domain — find the real URL (check the LinkedIn page Martín saved) and move into `targets`."
+    },
+    {
+      "label": "Force of Nature",
+      "tag": "competitor",
+      "note": "Venture studio building AI-native growth engine across portfolio. forceofnature.studio returns 404. Find the real URL and move into `targets`."
+    }
+  ]
+}

@@ -10,7 +10,10 @@
   "scripts": {
     "get-token": "tsx scripts/get-token.ts",
     "post": "tsx scripts/post.ts",
-    "post:dry": "tsx scripts/post.ts --dry-run"
+    "post:dry": "tsx scripts/post.ts --dry-run",
+    "intel": "node scripts/intel-sweep.mjs",
+    "intel:dry": "node scripts/intel-sweep.mjs --dry-run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "gray-matter": "^4.0.3"
