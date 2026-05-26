@@ -27,20 +27,10 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-interface PRFile {
-  filename: string;
-  status: string;
-}
-
-async function listPRFiles(repo: string, prNumber: string, token: string): Promise<PRFile[]> {
-  const res = await fetch(`https://api.github.com/repos/${repo}/pulls/${prNumber}/files`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/vnd.github+json",
-    },
-  });
-  if (!res.ok) throw new Error(`GitHub PR files API failed: ${res.status} ${await res.text()}`);
-  return (await res.json()) as PRFile[];
+function extractPostDate(prTitle: string): string | null {
+  // PR title convention: "[post] 2026-05-26 — Hook line"
+  const match = prTitle.match(/(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : null;
 }
 
 async function main() {
@@ -48,7 +38,6 @@ async function main() {
     "RESEND_API_KEY",
     "NOTIFY_EMAIL_TO",
     "NOTIFY_EMAIL_FROM",
-    "GH_TOKEN",
     "PR_NUMBER",
     "PR_TITLE",
     "PR_URL",
@@ -61,22 +50,16 @@ async function main() {
     }
   }
 
-  const files = await listPRFiles(
-    process.env.REPO!,
-    process.env.PR_NUMBER!,
-    process.env.GH_TOKEN!,
-  );
-  const postFile = files.find((f) => /^posts\/\d{4}-\d{2}-\d{2}\.md$/.test(f.filename));
-
-  if (!postFile) {
-    console.log("No post file in PR — skipping notification.");
+  const date = extractPostDate(process.env.PR_TITLE!);
+  if (!date) {
+    console.log("PR title doesn't contain a YYYY-MM-DD date — skipping notification.");
     process.exit(0);
   }
 
-  const filePath = resolve(ROOT, postFile.filename);
+  const filePath = resolve(ROOT, "posts", `${date}.md`);
   if (!existsSync(filePath)) {
-    console.error(`Post file not found at: ${filePath}`);
-    process.exit(1);
+    console.log(`No post file at posts/${date}.md — skipping notification.`);
+    process.exit(0);
   }
 
   const raw = readFileSync(filePath, "utf8");
@@ -88,7 +71,6 @@ async function main() {
     image_alt?: string;
   };
   const body = parsed.content.trim();
-  const date = postFile.filename.match(/(\d{4}-\d{2}-\d{2})/)?.[1] ?? "?";
   const visibility = (meta.visibility ?? "PUBLIC").toUpperCase();
   const status = meta.status ?? "ready";
 
