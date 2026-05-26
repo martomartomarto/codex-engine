@@ -54,18 +54,47 @@ Most marketing teams hire to scale: more people, more agencies, more tools. The 
 
 The complete method is documented at [codex-os.vercel.app](https://codex-os.vercel.app).
 
+## Intel sweep (weekly)
+
+A second module: every Monday at 09:00 UTC, a GitHub Action scrapes a list of competitor + research URLs via [Firecrawl](https://www.firecrawl.dev/) and commits a dated report to `intel/output/`. Material for the newsletter, for posts, for competitive positioning.
+
+```
+intel/targets.json  →  GitHub Action @ Mon 09:00 UTC  →  Firecrawl /v2/scrape  →  intel/output/YYYY-MM-DD.md
+```
+
+**Setup:**
+
+1. Grab a Firecrawl API key at https://www.firecrawl.dev/ (free tier: 500 credits/mo).
+2. Add `FIRECRAWL_API_KEY` to GitHub Secrets (and to `.env` for local runs).
+3. Edit `intel/targets.json` — add/remove URLs, group them by `tag`.
+
+**Run locally:**
+
+```bash
+npm run intel:dry     # scrape but don't write — preview first 500 chars per target
+npm run intel         # write intel/output/YYYY-MM-DD.md
+```
+
+The weekly workflow commits the output back to the repo (build-in-public). If you'd rather keep reports private, flip `permissions: contents: write` → `read` in `intel-weekly.yml` and upload as an artifact instead.
+
 ## Files
 
 ```
 codex-engine/
-├── posts/                    # your queue (markdown files, one per date)
+├── posts/                    # your LinkedIn queue (markdown files, one per date)
+├── intel/
+│   ├── targets.json          # what to scrape — edit this
+│   └── output/               # weekly reports land here
 ├── scripts/
 │   ├── get-token.ts          # one-time OAuth helper
-│   └── post.ts               # publishes today's post
+│   ├── post.ts               # publishes today's post
+│   └── intel-sweep.ts        # weekly intel sweep (Firecrawl)
 ├── lib/
-│   └── linkedin.ts           # API client (OAuth refresh, post creation)
+│   ├── linkedin.ts           # API client (OAuth refresh, post creation)
+│   └── firecrawl.ts          # API client (scrape)
 └── .github/workflows/
-    └── post-daily.yml        # cron @ 14:00 UTC
+    ├── post-daily.yml        # cron @ 14:00 UTC daily
+    └── intel-weekly.yml      # cron @ 09:00 UTC Mondays
 ```
 
 ## License

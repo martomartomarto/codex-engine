@@ -1,0 +1,51 @@
+name: Intel sweep (weekly)
+
+on:
+  schedule:
+    # Mondays 09:00 UTC = 06:00 AR (-03:00), 04:00 ET. Adjust if needed.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run — scrape but don't write/commit"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Run intel sweep
+        env:
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+        run: |
+          DRY_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_FLAG="--dry-run"
+          fi
+          node scripts/intel-sweep.mjs $DRY_FLAG
+
+      - name: Commit report
+        if: github.event.inputs.dry_run != 'true'
+        run: |
+          if [ -z "$(git status --porcelain intel/output)" ]; then
+            echo "No new output to commit."
+            exit 0
+          fi
+          git config user.name "codex-engine[bot]"
+          git config user.email "codex-engine@users.noreply.github.com"
+          git add intel/output
+          git commit -m "intel: sweep $(date -u +%Y-%m-%d)"
+          git push
