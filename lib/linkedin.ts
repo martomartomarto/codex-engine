@@ -2,7 +2,7 @@
 // Uses the modern /rest/posts endpoint (Posts API, versioned).
 // Reference: https://learn.microsoft.com/en-us/linkedin/marketing/community-management/shares/posts-api
 
-const API_VERSION = "202410";
+const API_VERSION = "202605";
 const REST_BASE = "https://api.linkedin.com/rest";
 const OAUTH_BASE = "https://www.linkedin.com/oauth/v2";
 
