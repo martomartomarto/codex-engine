@@ -101,12 +101,13 @@ async function main() {
 
   const post = findPost(date);
   if (!post) {
-    console.log(`No post scheduled for ${date}.`);
+    console.error(`✗ No post scheduled for ${date}.`);
     const available = listAvailable();
     if (available.length) {
-      console.log(`Available dates: ${available.map((f) => f.replace(".md", "")).join(", ")}`);
+      console.error(`  Available dates: ${available.map((f) => f.replace(".md", "")).join(", ")}`);
     }
-    process.exit(0);
+    // Fail loudly: silent success on missing files hid a stuck PR for days (May 23–27, 2026).
+    process.exit(1);
   }
 
   if (post.data.status && post.data.status !== "ready") {
