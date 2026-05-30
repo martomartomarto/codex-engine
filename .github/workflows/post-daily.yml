@@ -2,8 +2,8 @@ name: Post to LinkedIn
 
 on:
   schedule:
-    # 14:00 UTC daily = 11:00 AM Argentina (-03:00). Adjust if needed.
-    - cron: "0 14 * * *"
+    # 14:00 UTC Mondays & Fridays = 11:00 AM Argentina (-03:00). Adjust if needed.
+    - cron: "0 14 * * 1,5"
   workflow_dispatch:
     inputs:
       date:
