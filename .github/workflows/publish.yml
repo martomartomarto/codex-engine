@@ -1,13 +1,14 @@
-name: Post to LinkedIn
+name: Publish to LinkedIn (on approval)
+
+# Triggered ONLY on demand — by the Vercel /api/publish endpoint (when you click
+# "Publicar ahora" in the confirm page) or manually. There is no schedule here:
+# the old daily auto-publish was removed so nothing ships without your approval.
 
 on:
-  schedule:
-    # 14:00 UTC Mondays & Fridays = 11:00 AM Argentina (-03:00). Adjust if needed.
-    - cron: "0 14 * * 1,5"
   workflow_dispatch:
     inputs:
       date:
-        description: "Override post date (YYYY-MM-DD). Leave empty for today."
+        description: "Post date (YYYY-MM-DD). Empty = today."
         required: false
         default: ""
       dry_run:
@@ -20,7 +21,7 @@ jobs:
   post:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write # needed to commit status:sent back (idempotency guard)
     steps:
       - uses: actions/checkout@v4
 
@@ -48,3 +49,14 @@ jobs:
             DRY_FLAG="--dry-run"
           fi
           npx tsx scripts/post.ts $DATE_FLAG $DRY_FLAG
+
+      - name: Mark post as sent (prevents double-publish)
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          if ! git diff --quiet -- posts/; then
+            git config user.name "codex-engine[bot]"
+            git config user.email "codex-engine@users.noreply.github.com"
+            git add posts/
+            git commit -m "post: mark sent [skip ci]"
+            git push
+          fi

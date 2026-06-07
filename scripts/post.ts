@@ -14,7 +14,7 @@
 //   --dry-run    Print what would be posted, don't actually post
 //   --date YYYY-MM-DD  Override today's date (useful for testing)
 
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync, writeFileSync } from "node:fs";
 import { join, dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import matter from "gray-matter";
@@ -205,6 +205,16 @@ async function main() {
   });
 
   console.log(`✓ Published. Post ID: ${result.id}`);
+
+  // Idempotency: flip status -> sent so a second approval/dispatch is a no-op.
+  // The publish.yml workflow commits this change back to main.
+  try {
+    const updated = matter.stringify(post.body, { ...post.data, status: "sent" });
+    writeFileSync(post.path, updated);
+    console.log("✓ Marked status: sent");
+  } catch (err) {
+    console.warn(`⚠ Could not mark status:sent — ${err instanceof Error ? err.message : err}`);
+  }
 }
 
 main().catch((err) => {
