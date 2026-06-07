@@ -121,7 +121,7 @@ async function main() {
   }
 
   const escapedBody = escapeHtml(body).replace(/\n/g, "<br/>");
-  const subject = `[codex-engine] Aprobar post del ${date}`;
+  const subject = `[LinkedIn] Aprobar post del ${date}`;
   const imageNote = meta.image
     ? `<div style="margin-top:16px;padding:14px 16px;background:#f5f5f5;border-radius:4px;color:#555;font-size:13px;font-family:monospace;">📎 imagen: ${escapeHtml(meta.image)}${attachments.length ? " (adjunta abajo)" : " (URL remota)"}</div>`
     : "";
@@ -130,7 +130,7 @@ async function main() {
 <html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;margin:0;padding:32px;">
 <div style="max-width:640px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e5e5e5;">
   <div style="background:#0a0a0a;color:#e8e8e6;padding:28px 32px;">
-    <div style="font-family:'SF Mono',Menlo,monospace;font-size:11px;letter-spacing:0.1em;color:#777772;text-transform:uppercase;margin-bottom:10px;">codex-engine · revisión de post</div>
+    <div style="font-family:'SF Mono',Menlo,monospace;font-size:11px;letter-spacing:0.1em;color:#777772;text-transform:uppercase;margin-bottom:10px;">LinkedIn · revisión de post</div>
     <div style="font-size:22px;font-weight:600;letter-spacing:-0.015em;line-height:1.3;">Post listo para ${date}</div>
     <div style="font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#b8b8b4;margin-top:10px;">
       visibilidad: ${visibility} &nbsp; · &nbsp; ${body.length} caracteres

@@ -77,7 +77,7 @@ export default async function handler(req: any, res: any) {
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.status(200).send(page(`Aprobar post ${date}`, `
   <div style="background:#0a0a0a;color:#e8e8e6;padding:28px 32px;">
-    <div style="font-family:'SF Mono',Menlo,monospace;font-size:11px;letter-spacing:0.1em;color:#777772;text-transform:uppercase;margin-bottom:10px;">codex-engine · confirmar publicación</div>
+    <div style="font-family:'SF Mono',Menlo,monospace;font-size:11px;letter-spacing:0.1em;color:#777772;text-transform:uppercase;margin-bottom:10px;">LinkedIn · confirmar publicación</div>
     <div style="font-size:22px;font-weight:600;line-height:1.3;">Post del ${esc(date)}</div>
     <div style="font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#b8b8b4;margin-top:10px;">visibilidad: ${esc(visibility)} · ${body.length} caracteres</div>
   </div>

@@ -2,7 +2,7 @@
   "name": "codex-engine",
   "version": "0.2.0",
   "private": false,
-  "description": "The system that posts to LinkedIn for me. Part of Codex (codex-os.vercel.app).",
+  "description": "The engine that posts to my LinkedIn.",
   "type": "module",
   "engines": {
     "node": ">=22.0.0"

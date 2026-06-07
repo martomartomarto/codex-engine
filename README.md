@@ -1,8 +1,8 @@
-# codex-engine
+# LinkedIn engine
 
 The system that posts to LinkedIn for me.
 
-Part of [Codex](https://codex-os.vercel.app) — an AI operating system for growth teams. This repo is the operator's LinkedIn publishing module: posts live as markdown in `posts/`. **Nothing is published automatically.** Each post is emailed for approval first; you publish with one click.
+The engine that posts to my LinkedIn. Posts live as markdown in `posts/`. **Nothing is published automatically.** Each post is emailed for approval first; you publish with one click.
 
 ```
 posts/2026-06-08.md
@@ -78,7 +78,7 @@ Open the email → **Aprobar y publicar** → confirm page → **Publicar ahora*
 
 Most marketing teams hire to scale: more people, more agencies, more tools. The opposite approach is to architect systems that automate the work, then let small teams (or one person) operate at the output of much larger ones. This is one of those systems, written in public.
 
-The complete method is documented at [codex-os.vercel.app](https://codex-os.vercel.app).
+
 
 ## Intel sweep (weekly)
 
@@ -106,7 +106,7 @@ The weekly workflow commits the output back to the repo (build-in-public). If yo
 ## Files
 
 ```
-codex-engine/
+engine/
 ├── posts/                    # your LinkedIn queue (markdown files, one per date)
 ├── intel/
 │   ├── targets.json          # what to scrape — edit this
