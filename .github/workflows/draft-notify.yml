@@ -1,0 +1,43 @@
+name: Send draft for approval
+
+# Emails Martín the day's draft post + a signed "Aprobar y publicar" button.
+# This is the ONLY scheduled job now — it does NOT publish. Nothing reaches
+# LinkedIn until the button (and the confirm page) is clicked.
+
+on:
+  schedule:
+    # 13:00 UTC Mon & Fri = 10:00 AM Argentina (-03:00). The draft lands in the
+    # morning; you approve whenever you're ready (no fixed publish time anymore).
+    - cron: "0 13 * * 1,5"
+  workflow_dispatch:
+    inputs:
+      date:
+        description: "Override post date (YYYY-MM-DD). Empty = today."
+        required: false
+        default: ""
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - name: Send draft email
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+          NOTIFY_EMAIL_FROM: ${{ secrets.NOTIFY_EMAIL_FROM }}
+          APPROVE_SECRET: ${{ secrets.APPROVE_SECRET }}
+          APPROVE_BASE_URL: ${{ secrets.APPROVE_BASE_URL }}
+        run: |
+          DATE_FLAG=""
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            DATE_FLAG="--date ${{ github.event.inputs.date }}"
+          fi
+          npx tsx scripts/send-draft.ts $DATE_FLAG

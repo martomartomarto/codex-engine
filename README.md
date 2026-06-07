@@ -2,18 +2,38 @@
 
 The system that posts to LinkedIn for me.
 
-Part of [Codex](https://codex-os.vercel.app) — an AI operating system for growth teams. This repo is the operator's LinkedIn publishing module: posts live as markdown in `posts/`, a GitHub Action publishes the day's file to LinkedIn at a fixed UTC time using the LinkedIn API.
+Part of [Codex](https://codex-os.vercel.app) — an AI operating system for growth teams. This repo is the operator's LinkedIn publishing module: posts live as markdown in `posts/`. **Nothing is published automatically.** Each post is emailed for approval first; you publish with one click.
 
 ```
-posts/2026-05-22.md  →  GitHub Action @ 14:00 UTC  →  LinkedIn /rest/posts  →  feed
+posts/2026-06-08.md
+   │
+   ▼  Mon/Fri 13:00 UTC — GitHub Action sends a DRAFT EMAIL (does NOT publish)
+   │     · full preview + signed "Aprobar y publicar" button
+   │     · to iterate: reply to the email with changes
+   ▼  you click → Vercel /api/approve (confirm page) → /api/publish
+   │
+   ▼  fires publish.yml → scripts/post.ts → LinkedIn /rest/posts → feed
+         (then marks the post status:sent so it can't double-post)
 ```
 
 ## How it works
 
-- **Source of truth:** `posts/YYYY-MM-DD.md` files. One file per scheduled post. Frontmatter controls visibility and status.
-- **Scheduler:** `.github/workflows/post-daily.yml` runs at 14:00 UTC (11:00 AR). Manually triggerable too.
-- **Publishing:** `scripts/post.ts` refreshes the LinkedIn access token, then calls the Posts API.
-- **Tokens:** stored as GitHub Secrets. Refresh token has ~1-year lifespan, access token gets minted fresh per run.
+- **Source of truth:** `posts/YYYY-MM-DD.md` files. One per post. Frontmatter controls visibility and status (`ready` → publishable, `sent` → already posted).
+- **Draft notifier:** `.github/workflows/draft-notify.yml` runs Mon/Fri 13:00 UTC and runs `scripts/send-draft.ts`, which emails you the draft with a signed approve link (HMAC of the date). **This job never publishes.**
+- **Approval (Vercel):** `api/approve.ts` renders a confirm page; `api/publish.ts` verifies the signature and triggers the publish workflow. The LinkedIn tokens never touch Vercel — it only holds the signing secret + a GitHub PAT.
+- **Publishing:** `.github/workflows/publish.yml` (workflow_dispatch only — no cron) runs `scripts/post.ts`, which refreshes the LinkedIn token, calls the Posts API, and commits `status:sent` back to `main`.
+- **Tokens:** stored as GitHub Secrets. Refresh token ~1-year lifespan; access token minted fresh per run.
+
+### Secrets
+
+| Secret | GitHub | Vercel | Purpose |
+|---|---|---|---|
+| `LINKEDIN_*` (5) | ✅ | — | publish to LinkedIn |
+| `RESEND_API_KEY`, `NOTIFY_EMAIL_TO`, `NOTIFY_EMAIL_FROM` | ✅ | — | send the draft email |
+| `APPROVE_SECRET` | ✅ | ✅ | sign / verify the approve link (must match) |
+| `APPROVE_BASE_URL` | ✅ | — | Vercel base URL put into the email button |
+| `GH_DISPATCH_TOKEN` | — | ✅ | lets Vercel trigger the publish workflow |
+| `REPO` | — | ✅ (optional) | `owner/name`, defaults to this repo |
 
 ## Setup (one-time)
 
@@ -46,7 +66,13 @@ npm run post:dry              # uses today's date
 npm run post -- --date 2026-05-25 --dry-run
 ```
 
-Commit. The Action handles the rest at 14:00 UTC.
+Commit it to `main`. Then either wait for the Mon/Fri draft email, or send one now:
+
+```bash
+npm run send-draft -- --date 2026-05-25   # emails the draft + approve button
+```
+
+Open the email → **Aprobar y publicar** → confirm page → **Publicar ahora**. To change something, just reply to the email; edit the post, re-run `send-draft`. Nothing publishes until you click.
 
 ## Why this exists
 
@@ -85,15 +111,21 @@ codex-engine/
 ├── intel/
 │   ├── targets.json          # what to scrape — edit this
 │   └── output/               # weekly reports land here
+├── api/                      # Vercel serverless endpoints (approval flow)
+│   ├── approve.ts            # confirm page (GET, signed link from email)
+│   └── publish.ts            # verifies + triggers publish.yml (POST)
 ├── scripts/
 │   ├── get-token.ts          # one-time OAuth helper
-│   ├── post.ts               # publishes today's post
+│   ├── post.ts               # publishes a post, marks it sent
+│   ├── send-draft.ts         # emails the draft + signed approve button
 │   └── intel-sweep.ts        # weekly intel sweep (Firecrawl)
 ├── lib/
 │   ├── linkedin.ts           # API client (OAuth refresh, post creation)
+│   ├── sign.ts               # HMAC signer for the approve link
 │   └── firecrawl.ts          # API client (scrape)
 └── .github/workflows/
-    ├── post-daily.yml        # cron @ 14:00 UTC daily
+    ├── draft-notify.yml      # cron Mon/Fri 13:00 UTC — emails draft (no publish)
+    ├── publish.yml           # on-approval only (workflow_dispatch) — publishes
     └── intel-weekly.yml      # cron @ 09:00 UTC Mondays
 ```
 
