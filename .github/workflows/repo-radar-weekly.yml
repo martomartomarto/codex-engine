@@ -2,9 +2,9 @@ name: Repo radar (weekly)
 
 on:
   schedule:
-    # Mondays 08:00 UTC = 05:00 AR (-03:00). Runs before the intel sweep (09:00)
-    # so fresh design/marketing candidates are ready at the start of the week.
-    - cron: "0 8 * * 1"
+    # Sundays 11:00 UTC = 08:00 AR (-03:00). Runs before the weekly-ideas job
+    # (13:00 UTC) so the radar is fresh when Claude curates the week's ideas.
+    - cron: "0 11 * * 0"
   workflow_dispatch:
     inputs:
       dry_run:

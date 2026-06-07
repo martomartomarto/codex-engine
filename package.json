@@ -12,11 +12,13 @@
     "post": "tsx scripts/post.ts",
     "post:dry": "tsx scripts/post.ts --dry-run",
     "send-draft": "tsx scripts/send-draft.ts",
+    "ideas": "tsx scripts/weekly-ideas.ts",
     "intel": "node scripts/intel-sweep.mjs",
     "intel:dry": "node scripts/intel-sweep.mjs --dry-run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.102.0",
     "gray-matter": "^4.0.3"
   },
   "devDependencies": {

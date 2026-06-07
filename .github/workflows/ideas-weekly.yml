@@ -1,0 +1,32 @@
+name: Weekly post ideas
+
+# Every Sunday: read the fresh repo-radar + intel + recent posts, have Claude
+# curate this week's post ideas in Martín's voice, and email them.
+# Runs AFTER the repo-radar refresh (08:00 UTC) so the radar is fresh.
+# Does NOT write posts or publish — Martín picks one and replies.
+
+on:
+  schedule:
+    # 13:00 UTC Sunday = 10:00 AM Argentina (-03:00).
+    - cron: "0 13 * * 0"
+  workflow_dispatch:
+
+jobs:
+  ideas:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - name: Curate and email weekly ideas
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
+          NOTIFY_EMAIL_FROM: ${{ secrets.NOTIFY_EMAIL_FROM }}
+        run: npx tsx scripts/weekly-ideas.ts
