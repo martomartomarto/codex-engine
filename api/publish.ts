@@ -10,7 +10,8 @@
 //   GH_DISPATCH_TOKEN  GitHub PAT (fine-grained) with Actions: read+write on the repo
 //   REPO               owner/name (default martomartomarto/codex-engine)
 
-import { verify } from "../lib/sign.ts";
+// .js extension (not .ts) — see note in api/approve.ts.
+import { verify } from "../lib/sign.js";
 
 const REPO = process.env.REPO || "martomartomarto/codex-engine";
 const WORKFLOW = "publish.yml";

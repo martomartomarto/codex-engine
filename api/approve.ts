@@ -12,7 +12,9 @@
 // Env vars: APPROVE_SECRET (must match the GitHub Action), REPO (owner/name).
 
 import matter from "gray-matter";
-import { verify } from "../lib/sign.ts";
+// NOTE: .js extension (not .ts) — @vercel/node compiles this to .js and Node ESM
+// resolves the compiled path at runtime. TS resolves .js → the sign.ts source.
+import { verify } from "../lib/sign.js";
 
 const REPO = process.env.REPO || "martomartomarto/codex-engine";
 
