@@ -144,7 +144,7 @@ async function main() {
     </div>
     <div style="margin-top:24px;color:#777;font-size:13px;text-align:center;line-height:1.7;">
       <strong>Aprobar</strong> = abre una página de confirmación; ahí publicás.<br/>
-      <strong>Iterar</strong> = respondé este mail con los cambios.<br/>
+      <strong>¿Cambios?</strong> Decímelo por Claude y lo edito + reenvío.<br/>
       Si no hacés nada, <strong>no se publica</strong>.
     </div>
   </div>

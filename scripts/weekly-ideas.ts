@@ -154,7 +154,7 @@ async function main() {
   <div style="padding:32px;">
     <div style="font-size:15px;line-height:1.7;color:#1a1a1a;">${escaped}</div>
     <div style="margin-top:28px;color:#777;font-size:13px;line-height:1.7;border-top:1px solid #eee;padding-top:20px;">
-      Respondé este mail con la que querés (ej. "dale a la 1 y la 3") y la escribo + te mando el draft para aprobar.
+      Para elegir, decímelo por Claude (ej. "dale a la 1 y la 3") y la escribo + te mando el draft para aprobar. <em>(Responder este mail no dispara nada todavía.)</em>
     </div>
   </div>
 </div>
