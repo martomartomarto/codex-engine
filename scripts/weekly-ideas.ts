@@ -68,24 +68,37 @@ function recentHooks(limit = 8): string[] {
   });
 }
 
-const SYSTEM_PROMPT = `You curate weekly LinkedIn post ideas for Martín, a Growth Lead who builds marketing/ops systems with AI.
+const BASE_PROMPT = `You curate weekly LinkedIn post ideas for Martín, a Growth Lead who builds marketing/ops systems with AI.
 
-His feed, in his words: first person, English, no branding, no signature, no pitch. The angle is always "a Growth Lead who builds systems with AI" — not a marketing manager. Dry, direct, no hype.
+His feed, in his words: first person, English, no branding, no signature, no links, no pitch. The angle is always "a Growth Lead who builds systems with AI" — not a marketing manager, and NOT an engineer. Dry, direct, no hype.
 
-What he wants to post about, in priority order:
-1. Lesser-known open-source git repos + sharp technical insights (this is the core — it comes from the "REPO RADAR" input below).
-2. Things from his day-to-day building growth systems that are genuinely worth sharing.
-3. Anything from his work at a LATAM PropTech SaaS ("Lebane") ONLY if there's something new and concrete — and always anonymized: never name the company, clients, colleagues, or expose ARR/MRR/churn/customer counts. Use proxies ("a LATAM SaaS", "scaling across LATAM").
+ALTITUDE — the single most important rule. Write for an operator/founder reading on their phone, NOT for a developer. Lead with the outcome or the idea, never the implementation. If something is technical, translate it into what it lets a person build and why it matters — cut the mechanism unless the mechanism IS the insight. Avoid plumbing vocabulary (race condition, OAuth, API 4xx, cron, webhook, schema, regex, rate limit, token, deploy pipeline) unless the post is literally about that bug. Litmus test for every idea: would a founder who can't code find this interesting? If only an engineer would, rewrite it or drop it.
+
+What he wants to post about — rotate roughly evenly between the first two:
+1. Lesser-known open-source repos + the OPERATOR's angle on why they matter — not the technical insight, the "what this unlocks for someone building a business" insight (from the "REPO RADAR" input below).
+2. Track-record milestones — real systems he built/shipped at a LATAM PropTech SaaS, told as "here's what I built and what it changed" (from the "MILESTONE BANK" input below).
+3. Things from his day-to-day building growth systems that are genuinely worth sharing.
+
+ANONYMIZATION (hard rule): never name the company, clients, colleagues, or the product. Use proxies ("a LATAM PropTech SaaS", "a SaaS scaling across Mexico and Argentina"). Never expose ARR/MRR/revenue/customer counts/CAC/churn or anyone's name. Numbers about the SYSTEM are fine ("20+ live pages"); numbers about the BUSINESS are not.
 
 Do NOT repeat themes from his recent posts (listed below).
 
 For each idea give:
 - A strong first-person HOOK (1 line, in his voice — the kind of opening that stops the scroll).
-- A 2-3 sentence ANGLE: the insight, why it lands for operators/builders, and how he can make it his (tie to his real experience when relevant).
-- The SOURCE (repo URL / signal) when it comes from the radar.
+- A 2-3 sentence ANGLE: the insight, why it lands for operators/builders, and how he makes it his.
+- The SOURCE (repo URL / "milestone bank" / signal).
 - Whether it needs a visual or works text-only, and why.
 
-Pick the 4-5 strongest. Lead with the best. Be concrete and opinionated — these should feel ready to write, not generic prompts. Skip weak/saturated repos. Output clean plain text (no markdown headers heavier than a number + title); this goes straight into an email.`;
+Pick the 4-5 strongest, ideally a MIX of repos and milestones (not all of one kind). Lead with the best. Be concrete and opinionated — ready to write, not generic prompts. Skip weak/saturated repos. Output clean plain text (no markdown headers heavier than a number + title); this goes straight into an email.`;
+
+// Read an optional repo file; "" if missing. Used for VOICE.md + the milestone bank.
+function readOptional(relPath: string): string {
+  try {
+    return readFileSync(join(ROOT, relPath), "utf8").trim();
+  } catch {
+    return "";
+  }
+}
 
 async function main() {
   loadEnv();
@@ -104,20 +117,34 @@ async function main() {
     process.exit(1);
   }
   const hooks = recentHooks();
+  const voice = readOptional("VOICE.md");
+  const milestones = readOptional("intel/track-record.md");
+
+  // VOICE.md is the source of truth for tone/altitude — append it as authoritative
+  // when present, so the same rules govern ideas and (later) the written posts.
+  const system = voice
+    ? `${BASE_PROMPT}\n\n=== VOICE GUIDE (authoritative — follow this exactly) ===\n${voice}`
+    : BASE_PROMPT;
 
   const userMsg = [
-    "=== REPO RADAR (this week's rising repos — the main source) ===",
+    "=== REPO RADAR (this week's rising repos — source #1) ===",
     radar.text,
+    "",
+    "=== MILESTONE BANK (anonymized track-record seeds — source #2) ===",
+    milestones || "(none — propose only repo/day-to-day ideas this week)",
     "",
     intel ? "=== INTEL SWEEP (competitor / sector movements) ===\n" + intel.text : "(no intel sweep this week)",
     "",
     "=== RECENT POSTS (do NOT repeat these themes) ===",
     hooks.length ? hooks.join("\n") : "(none)",
     "",
-    "Give me this week's 4-5 post ideas.",
+    "Give me this week's 4-5 post ideas — a mix of repos and milestones.",
   ].join("\n");
 
-  console.log(`▸ Curating ideas from radar ${radar.name}${intel ? ` + intel ${intel.name}` : ""}…`);
+  console.log(
+    `▸ Curating ideas from radar ${radar.name}${intel ? ` + intel ${intel.name}` : ""}` +
+      `${milestones ? " + milestone bank" : ""}${voice ? " (voice guide loaded)" : ""}…`,
+  );
 
   const client = new Anthropic();
   const response = await client.messages.create({
@@ -125,7 +152,7 @@ async function main() {
     max_tokens: 4000,
     thinking: { type: "adaptive" },
     output_config: { effort: "high" },
-    system: SYSTEM_PROMPT,
+    system,
     messages: [{ role: "user", content: userMsg }],
   });
 
