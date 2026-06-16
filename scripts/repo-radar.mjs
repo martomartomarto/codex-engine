@@ -263,17 +263,27 @@ function score(c) {
   return Math.round(s * 10) / 10;
 }
 
+// Just the factual "what it does" — NO canned angle. The earlier version stamped
+// one of ~8 fixed phrases by keyword, which produced recycled and often nonsensical
+// angles (e.g. a code formatter tagged "diseño/marketing"). The curator (Claude,
+// with VOICE.md) forms the real angle from these facts.
 function angleSeed(c) {
   const d = c.meta?.description || c.hn?.title || "";
-  const verb = /animation|motion|transition|gsap|framer/i.test(d) ? "movimiento que hace que un sitio se sienta vivo, sin un diseñador de motion"
-    : /chart|dataviz|d3|visuali/i.test(d) ? "convierte datos en algo que la gente entiende de un vistazo"
-    : /color|palette|gradient|typography|font/i.test(d) ? "la decisión estética que separa lo pro de lo genérico"
-    : /component|ui-kit|design-system|tailwind|css/i.test(d) ? "los bloques que te ahorran semanas de diseño"
-    : /landing|page|website|template|portfolio/i.test(d) ? "lanzás una página que convierte sin tocar Figma"
-    : /seo|analytics|email|funnel|conversion|cro|ads|growth/i.test(d) ? "marketing que corre solo mientras dormís"
-    : /generative|diffusion|image|video|avatar|tts|voice/i.test(d) ? "creatividad generada, lista para producción"
-    : "hace una sola cosa de diseño/marketing, gratis, mejor que el SaaS que la vende";
-  return `Qué hace: ${d || "—"}. Ángulo: ${verb}.`;
+  return `What it does: ${d || "—"}`;
+}
+
+// Repos already turned into posts — never surface them again. One slug per line
+// (owner/repo, case-insensitive); blank lines and #comments ignored. Seed file at
+// intel/posted-repos.txt; append a slug when a repo post ships.
+function loadPostedRepos() {
+  try {
+    const raw = readFileSync(join(ROOT, "intel/posted-repos.txt"), "utf8");
+    return new Set(
+      raw.split("\n").map((l) => l.split("#")[0].trim().toLowerCase()).filter(Boolean),
+    );
+  } catch {
+    return new Set();
+  }
 }
 
 function renderProductHunt(ph) {
@@ -329,7 +339,7 @@ function renderReport(date, ranked, ph) {
       if (c.meta.homepage) lines.push(`- **Homepage:** ${c.meta.homepage}`);
     }
     if (c.hn) lines.push(`- **HN:** ${c.hn.points} points — "${c.hn.title}" (${c.hn.hnUrl})`);
-    lines.push(`- **Post seed:** ${angleSeed(c)}`);
+    lines.push(`- **${angleSeed(c)}**`);
     lines.push("");
   });
   lines.push(renderProductHunt(ph));
@@ -376,9 +386,11 @@ async function main() {
     c.rel = relevance(c);
     return c;
   });
-  const kept = scored.filter(isRelevant);
+  const posted = loadPostedRepos();
+  const kept = scored.filter((c) => isRelevant(c) && !posted.has(c.slug.toLowerCase()));
   const dropped = scored.length - kept.length;
-  console.log(`  ${kept.length} relevant · ${dropped} off-topic dropped`);
+  const postedDropped = scored.filter((c) => isRelevant(c) && posted.has(c.slug.toLowerCase())).length;
+  console.log(`  ${kept.length} relevant · ${dropped} dropped (${postedDropped} already posted)`);
 
   const ranked = kept
     .map((c) => ({ ...c, scoreVal: score(c) }))

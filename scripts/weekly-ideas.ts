@@ -79,9 +79,13 @@ What he wants to post about — rotate roughly evenly between the first two:
 2. Track-record milestones — real systems he built/shipped at a LATAM PropTech SaaS, told as "here's what I built and what it changed" (from the "MILESTONE BANK" input below).
 3. Things from his day-to-day building growth systems that are genuinely worth sharing.
 
+REPO QUALITY BAR — be ruthless. The radar over-collects; most candidates are NOT worth a post. REJECT: code formatters/linters, media-server themes, dev-only tooling, niche hobby projects, anything a growth/marketing operator or founder wouldn't care about, and anything mainstream everyone already knows. KEEP only repos that genuinely help someone BUILD or MARKET something (design/front-end craft, marketing/growth/analytics tooling, AI that touches the creative or ops layer). The radar's "Post seed / Ángulo" line is AUTO-GENERATED filler — IGNORE it and form your own angle from the repo's real description and what it does. If fewer than ~2 repos clear this bar, propose fewer repo ideas and lean on milestones/day-to-day instead — never pad with weak repos.
+
 ANONYMIZATION (hard rule): never name the company, clients, colleagues, or the product. Use proxies ("a LATAM PropTech SaaS", "a SaaS scaling across Mexico and Argentina"). Never expose ARR/MRR/revenue/customer counts/CAC/churn or anyone's name. Numbers about the SYSTEM are fine ("20+ live pages"); numbers about the BUSINESS are not.
 
-Do NOT repeat themes from his recent posts (listed below).
+DEDUP AGAINST THE PUBLISHED LIBRARY (hard rule). The "PUBLISHED LIBRARY" input below lists every topic he has ALREADY posted or already written. Check every idea against it. If an idea is close to anything there — same system, same lesson, same angle — DROP it. Do not propose it. At most it becomes an "update", never a new post. This applies to BOTH repos and milestones. He has noticed and disliked repeated topics — err on the side of cutting.
+
+Also do NOT repeat themes from his recent queued posts (listed below).
 
 For each idea give:
 - A strong first-person HOOK (1 line, in his voice — the kind of opening that stops the scroll).
@@ -119,6 +123,7 @@ async function main() {
   const hooks = recentHooks();
   const voice = readOptional("VOICE.md");
   const milestones = readOptional("intel/track-record.md");
+  const published = readOptional("intel/published.md");
 
   // VOICE.md is the source of truth for tone/altitude — append it as authoritative
   // when present, so the same rules govern ideas and (later) the written posts.
@@ -135,15 +140,19 @@ async function main() {
     "",
     intel ? "=== INTEL SWEEP (competitor / sector movements) ===\n" + intel.text : "(no intel sweep this week)",
     "",
-    "=== RECENT POSTS (do NOT repeat these themes) ===",
+    "=== PUBLISHED LIBRARY (ALREADY DONE — do NOT propose anything close to these) ===",
+    published || "(none on record — still avoid obvious repeats)",
+    "",
+    "=== RECENT QUEUED POSTS (also do NOT repeat these themes) ===",
     hooks.length ? hooks.join("\n") : "(none)",
     "",
-    "Give me this week's 4-5 post ideas — a mix of repos and milestones.",
+    "Give me this week's 4-5 post ideas — a mix of repos and milestones, NONE overlapping the published library, every repo clearing the quality bar.",
   ].join("\n");
 
   console.log(
     `▸ Curating ideas from radar ${radar.name}${intel ? ` + intel ${intel.name}` : ""}` +
-      `${milestones ? " + milestone bank" : ""}${voice ? " (voice guide loaded)" : ""}…`,
+      `${milestones ? " + milestone bank" : ""}${published ? " + published library" : ""}` +
+      `${voice ? " (voice guide loaded)" : ""}…`,
   );
 
   const client = new Anthropic();

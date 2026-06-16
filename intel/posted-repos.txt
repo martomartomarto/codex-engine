@@ -1,0 +1,7 @@
+# Repos already turned into LinkedIn posts — the radar excludes these.
+# One slug per line (owner/repo). Append when a repo post ships.
+# Find the slug in the radar report's "Link: https://github.com/<slug>".
+
+LayoutitStudio/polycss
+# phosphene  — posted 2026-06-08 (add full owner/repo slug from the radar)
+# babysitter — posted 2026-06-12 (add full owner/repo slug from the radar)
