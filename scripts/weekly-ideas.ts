@@ -176,6 +176,15 @@ async function main() {
     process.exit(1);
   }
 
+  // Dry run: print the curated ideas (so they show up in the Action log) and skip
+  // the email. Lets us inspect output without emailing. --dry-run or DRY_RUN=1.
+  if (process.argv.includes("--dry-run") || process.env.DRY_RUN === "1") {
+    console.log("\n===== IDEAS (dry-run — NOT emailed) =====\n");
+    console.log(ideas);
+    console.log("\n===== end ideas =====");
+    return;
+  }
+
   const today = new Date().toISOString().slice(0, 10);
   const escaped = escapeHtml(ideas).replace(/\n/g, "<br/>");
   const subject = `[LinkedIn] Ideas de la semana — ${today}`;

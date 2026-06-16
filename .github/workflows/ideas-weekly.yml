@@ -10,6 +10,12 @@ on:
     # 13:00 UTC Sunday = 10:00 AM Argentina (-03:00).
     - cron: "0 13 * * 0"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Print ideas to the log instead of emailing them"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   ideas:
@@ -29,4 +35,4 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           NOTIFY_EMAIL_TO: ${{ secrets.NOTIFY_EMAIL_TO }}
           NOTIFY_EMAIL_FROM: ${{ secrets.NOTIFY_EMAIL_FROM }}
-        run: npx tsx scripts/weekly-ideas.ts
+        run: npx tsx scripts/weekly-ideas.ts ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
